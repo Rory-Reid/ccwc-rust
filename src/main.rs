@@ -39,7 +39,7 @@ fn main() {
   let file_size = file.seek(SeekFrom::End(0)).unwrap() as usize;
   file.seek(SeekFrom::Start(0)).unwrap();
   let buf_size = if file_size > MAX_BUF_SIZE {MAX_BUF_SIZE} else {file_size};
-  let mut buffer = vec![0; file_size];
+  let mut buffer = vec![0; buf_size];
   loop {
     bytes_read = file.read(&mut buffer).unwrap(); // Todo - handle error and don't just unwrap
     if bytes_read == 0 {
