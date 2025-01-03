@@ -13,14 +13,17 @@ struct Args {
 
   #[arg(short = 'l')]
   count_lines: bool,
+
+  #[arg(short = 'w')]
+  count_words: bool,
 }
 
 fn main() {
   let args = Args::parse();
 
-  match args.count_bytes || args.count_lines {
+  match args.count_bytes || args.count_lines || args.count_words {
     true => {}
-    false => panic!("Current scope only supports -l and/or -c flags. At least one must be present.")
+    false => panic!("Current scope only supports -l and/or -c and/or -w flags. At least one must be present.")
   }
 
   let mut file = File::open(&args.file).unwrap(); // Todo - handle error and don't just unwrap
@@ -29,6 +32,9 @@ fn main() {
   let mut bytes_read : usize;
   let mut total_bytes : usize = 0;
   let mut lines : i64 = 0;
+
+  let mut reading_word = false;
+  let mut words : i64 = 0;
 
   // This essentially creates a fixed-length vector on the heap pre-allocated so that we can use it
   // as a buffer. I didn't use an array because it overflows the stack, and I had issues with that
@@ -46,13 +52,33 @@ fn main() {
       break;
     }
 
-    for index in 0..bytes_read {
-      if buffer[index] == b'\n' {
-        lines += 1;
+    let mut adjust = 0;
+    for utf8_chunk in buffer[0..bytes_read].utf8_chunks() {
+      let valid = utf8_chunk.valid();
+      let invalid = utf8_chunk.invalid();
+      adjust = invalid.len();
+
+      for character in valid.chars() {
+        if character.is_whitespace() {
+          if character == '\n' {
+            lines += 1;
+          }
+
+          words += if reading_word {1} else {0};
+          reading_word = false;
+        } else {
+          reading_word = true;
+        }
       }
     }
 
-    total_bytes += bytes_read;
+    if adjust == bytes_read {
+      // File has ended with invalid bytes - exit loop
+      total_bytes += bytes_read;
+      break;
+    }
+
+    total_bytes += bytes_read - adjust; // adjust by invalid bytes so we can re-read them
     if bytes_read < buf_size {
       // end of file
       break;
@@ -71,5 +97,10 @@ fn main() {
     false => String::new()
   };
 
-  println!("{}{} {}", lines_output, bytes_output, args.file);
+  let words_output = match args.count_words {
+    true => format!("{: >8}", words),
+    false => String::new()
+  };
+
+  println!("{}{}{} {}", lines_output, words_output, bytes_output, args.file);
 }

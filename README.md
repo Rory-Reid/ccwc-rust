@@ -11,3 +11,9 @@ In an interesting exercise of self-gaslighting, I had convinced myself that the 
 Luckily, this is a coding challenge I'm doing exclusively in the evening to learn rust, and I'm not being paid for it, so who cares.
 
 Also I picked a maximum 100mb buffer size based on an arbitrary "you won't notice it missing from your ram, but that's probably enough for now" without overthinking it too much.
+
+Note: I'm pretty sure I've introduced a string allocation which potentially quintuples the memory (rust stores characters in memory as 4 bytes per character. If you have 100mb of 1-byte ascii characters, this will buffer those fully, then allocate 400mb as a string variant). Should probably adjust this to 1/5th of the size.
+
+## Encoding
+
+Because I do not have the willpower or energy to do otherwise, I am only making this work with UTF-8 encoding.
