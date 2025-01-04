@@ -21,13 +21,41 @@ struct Args {
   count_characters : bool,
 }
 
+impl Args {
+  pub fn output_bytes_or_chars(&self) -> OutputType {
+    if self.count_characters {
+      return OutputType::Characters
+    } else if self.count_bytes {
+      return OutputType::Bytes
+    } else if self.is_default_option() {
+      return OutputType::Bytes
+    }
+
+    OutputType::None
+  }
+
+  pub fn should_output_lines(&self) -> bool {
+    self.count_lines || self.is_default_option()
+  }
+
+  pub fn should_output_words(&self) -> bool {
+    self.count_words || self.is_default_option()
+  }
+
+  fn is_default_option(&self) -> bool {
+    // If no flag specified, is running in default mode
+    !self.count_lines && !self.count_words && !self.count_characters && !self.count_bytes
+  }
+}
+
+enum OutputType {
+  Bytes,
+  Characters,
+  None
+}
+
 fn main() {
   let args = Args::parse();
-
-  match args.count_bytes || args.count_lines || args.count_words || args.count_characters {
-    true => {}
-    false => panic!("Current scope only supports -l and/or -c and/or -w and/or -m flags. At least one must be present.")
-  }
 
   let mut file = File::open(&args.file).unwrap(); // Todo - handle error and don't just unwrap
   file.seek(SeekFrom::Start(0)).unwrap();
@@ -94,20 +122,18 @@ fn main() {
   }
 
   // Applies -m if specified, ignoring -c, otherwise applies -c if specified
-  let bytes_output = match args.count_characters {
-    true => format!("{: >8}", characters),
-    false => match args.count_bytes {
-      true => format!("{: >8}", total_bytes),
-      false => String::new(),
-    }
+  let bytes_output = match args.output_bytes_or_chars() {
+    OutputType::Bytes => format!("{: >8}", total_bytes),
+    OutputType::Characters => format!("{: >8}", characters),
+    OutputType::None => String::new()
   };
 
-  let lines_output = match args.count_lines {
+  let lines_output = match args.should_output_lines() {
     true => format!("{: >8}", lines),
     false => String::new(),
   };
 
-  let words_output = match args.count_words {
+  let words_output = match args.should_output_words() {
     true => format!("{: >8}", words),
     false => String::new(),
   };
