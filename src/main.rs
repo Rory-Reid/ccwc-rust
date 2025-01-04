@@ -1,58 +1,9 @@
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
 use clap::Parser;
+use args::{Args, OutputType};
 
-#[derive(Parser)]
-#[command()]
-struct Args {
-  #[arg()]
-  file: String,
-
-  #[arg(short = 'c')]
-  count_bytes: bool,
-
-  #[arg(short = 'l')]
-  count_lines: bool,
-
-  #[arg(short = 'w')]
-  count_words: bool,
-
-  #[arg(short = 'm')]
-  count_characters : bool,
-}
-
-impl Args {
-  pub fn output_bytes_or_chars(&self) -> OutputType {
-    if self.count_characters {
-      return OutputType::Characters
-    } else if self.count_bytes {
-      return OutputType::Bytes
-    } else if self.is_default_option() {
-      return OutputType::Bytes
-    }
-
-    OutputType::None
-  }
-
-  pub fn should_output_lines(&self) -> bool {
-    self.count_lines || self.is_default_option()
-  }
-
-  pub fn should_output_words(&self) -> bool {
-    self.count_words || self.is_default_option()
-  }
-
-  fn is_default_option(&self) -> bool {
-    // If no flag specified, is running in default mode
-    !self.count_lines && !self.count_words && !self.count_characters && !self.count_bytes
-  }
-}
-
-enum OutputType {
-  Bytes,
-  Characters,
-  None
-}
+mod args;
 
 fn main() {
   let args = Args::parse();
@@ -122,7 +73,7 @@ fn main() {
   }
 
   // Applies -m if specified, ignoring -c, otherwise applies -c if specified
-  let bytes_output = match args.output_bytes_or_chars() {
+  let bytes_output = match args.char_output_type() {
     OutputType::Bytes => format!("{: >8}", total_bytes),
     OutputType::Characters => format!("{: >8}", characters),
     OutputType::None => String::new()
