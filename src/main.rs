@@ -16,14 +16,17 @@ struct Args {
 
   #[arg(short = 'w')]
   count_words: bool,
+
+  #[arg(short = 'm')]
+  count_characters : bool,
 }
 
 fn main() {
   let args = Args::parse();
 
-  match args.count_bytes || args.count_lines || args.count_words {
+  match args.count_bytes || args.count_lines || args.count_words || args.count_characters {
     true => {}
-    false => panic!("Current scope only supports -l and/or -c and/or -w flags. At least one must be present.")
+    false => panic!("Current scope only supports -l and/or -c and/or -w and/or -m flags. At least one must be present.")
   }
 
   let mut file = File::open(&args.file).unwrap(); // Todo - handle error and don't just unwrap
@@ -35,6 +38,8 @@ fn main() {
 
   let mut reading_word = false;
   let mut words : i64 = 0;
+
+  let mut characters : i64 = 0;
 
   // This essentially creates a fixed-length vector on the heap pre-allocated so that we can use it
   // as a buffer. I didn't use an array because it overflows the stack, and I had issues with that
@@ -59,6 +64,7 @@ fn main() {
       adjust = invalid.len();
 
       for character in valid.chars() {
+        characters += 1;
         if character.is_whitespace() {
           if character == '\n' {
             lines += 1;
@@ -87,19 +93,23 @@ fn main() {
     _ = file.seek(SeekFrom::Start(total_bytes as u64)).unwrap() // Todo - error handling
   }
 
-  let bytes_output = match args.count_bytes {
-    true => format!("{: >8}", total_bytes),
-    false => String::new()
+  // Applies -m if specified, ignoring -c, otherwise applies -c if specified
+  let bytes_output = match args.count_characters {
+    true => format!("{: >8}", characters),
+    false => match args.count_bytes {
+      true => format!("{: >8}", total_bytes),
+      false => String::new(),
+    }
   };
 
   let lines_output = match args.count_lines {
     true => format!("{: >8}", lines),
-    false => String::new()
+    false => String::new(),
   };
 
   let words_output = match args.count_words {
     true => format!("{: >8}", words),
-    false => String::new()
+    false => String::new(),
   };
 
   println!("{}{}{} {}", lines_output, words_output, bytes_output, args.file);

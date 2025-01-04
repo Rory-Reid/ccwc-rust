@@ -14,6 +14,24 @@ Also I picked a maximum 100mb buffer size based on an arbitrary "you won't notic
 
 Note: I'm pretty sure I've introduced a string allocation which potentially quintuples the memory (rust stores characters in memory as 4 bytes per character. If you have 100mb of 1-byte ascii characters, this will buffer those fully, then allocate 400mb as a string variant). Should probably adjust this to 1/5th of the size.
 
-## Encoding
+### Encoding
 
 Because I do not have the willpower or energy to do otherwise, I am only making this work with UTF-8 encoding.
+
+### Parity with `wc`
+
+Where possible this aims for parity with whatever version of `wc` sits on my mac. There is known deviation in the following areas:
+
+#### Character/Byte counting
+
+The `-w` and `-c` flags are mutually exclusive. You can specify both but `wc` will display ONLY one or the other. The `man` page for it states:
+
+```
+-c      The number of bytes in each input file is written to the standard output.  This will cancel out any prior usage of the -m option.
+-m      The number of characters in each input file is written to the standard output.  If the current locale does not support multibyte characters, this is equivalent to the -c option.  This will cancel out
+any prior usage of the -c option.
+```
+
+The key there is "cancels out prior usage" which means if you specify `-mc` then `-c` takes precedence, and it will output bytes, and if you specify `-cm`, the opposite happens.
+
+Since I'm not handrolling my argument parsing, the coding challenge doesn't specify absolute parity, and frankly I cannot be bothered to do otherwise, I am making a decision to apply `-m` in all circumstances if specified, regardless of the presence of `-c`.
