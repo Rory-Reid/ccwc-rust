@@ -4,7 +4,7 @@ use args::{Args, OutputType};
 
 pub mod args;
 
-pub fn count_words(args: Args) {
+pub fn count_words(args: Args) -> String {
   let mut file = File::open(&args.file).unwrap(); // Todo - handle error and don't just unwrap
   file.seek(SeekFrom::Start(0)).unwrap();
 
@@ -86,5 +86,19 @@ pub fn count_words(args: Args) {
     false => String::new(),
   };
 
-  println!("{}{}{} {}", lines_output, words_output, bytes_output, args.file);
+  format!("{}{}{} {}", lines_output, words_output, bytes_output, args.file)
+}
+
+#[cfg(test)]
+mod tests {
+  use crate::word_counter::args::Args;
+  use clap::Parser;
+  use crate::word_counter;
+
+  #[test]
+  fn default_with_test_file_produces_expected_output() {
+    let args = Args::parse_from(["ccwc", "./tests/data/test.txt"]);
+    let output = word_counter::count_words(args);
+    assert_eq!(output, "    7145   58164  342190 ./tests/data/test.txt")
+  }
 }
