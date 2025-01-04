@@ -53,8 +53,8 @@ pub enum OutputType {
 
 #[cfg(test)]
 mod tests {
-  use crate::args::{Args, OutputType};
   use clap::Parser;
+  use crate::word_counter::args::{Args, OutputType};
 
   #[test]
   fn parses_filename() {
